@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Family Care</title>
+<meta name="theme-color" content="#1f6f68">
+<link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231f6f68'/%3E%3Cpath d='M27 14h10v13h13v10H37v13H27V37H14V27h13z' fill='white'/%3E%3C/svg%3E">
+<style>
+:root{--acc:#1f6f68;--acc2:#e6f2f0;--ink:#1d2327;--mut:#68737a;--line:#e3e7e9;--bg:#f6f7f8;--ok:#2e7d4f;--okbg:#e5f4ea;--warn:#a86300;--warnbg:#fff2dc;--bad:#b3261e;--badbg:#fde7e5}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+#top{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--acc);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;display:flex;align-items:center;gap:10px}
+#top h1{font-size:18px;margin:0;font-weight:650;flex:1}
+#top .date{font-size:13px;opacity:.85;font-weight:400;display:block}
+#badge{background:rgba(255,255,255,.18);border:0;border-radius:999px;padding:6px 11px;font-size:13px;color:#fff;white-space:nowrap}
+#badge.warn{background:#ffd27a;color:#4a3000}
+#badge.bad{background:#ffb4ab;color:#5c0d07}
+#tabs{position:fixed;bottom:0;left:0;right:0;z-index:20;background:#fff;border-top:1px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+#tabs button{flex:1;border:0;background:none;padding:9px 0 10px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px}
+#tabs button .ic{font-size:20px;line-height:1}
+#tabs button.on{color:var(--acc);font-weight:650}
+#main{padding:12px 12px 20px;max-width:720px;margin:0 auto}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none}
+.chip{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;font-size:14px;white-space:nowrap}
+.chip.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:middle;background:#999}
+h2.ph{font-size:15px;margin:16px 2px 8px;color:var(--mut);font-weight:650;text-transform:none}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.title{font-weight:620}
+.dose{font-weight:400;color:var(--mut)}
+.sub{font-size:14px;color:var(--mut);margin-top:2px}
+.sub.warn{color:var(--warn)} .sub.bad{color:var(--bad)} .sub.ok{color:var(--ok)}
+.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 14px;font-weight:550}
+.btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
+.btn.danger{color:var(--bad);border-color:#f2c4bf}
+.btn.small{padding:6px 10px;font-size:14px}
+.btn:disabled{opacity:.5}
+.link{border:0;background:none;color:var(--acc);padding:4px 0;font-size:14px;font-weight:550}
+.slots{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.slot{border:1px solid var(--line);background:#fff;border-radius:8px;padding:4px 8px;font-size:13px}
+.slot.done{background:var(--okbg);border-color:#bfe3cb;color:var(--ok)}
+.slot.handled{background:#eef0f1;color:var(--mut)}
+.slot.due{background:var(--warnbg);border-color:#f3d39b;color:var(--warn);font-weight:600}
+.slot.overdue,.slot.missed{background:var(--badbg);border-color:#f2c4bf;color:var(--bad);font-weight:600}
+.empty{text-align:center;color:var(--mut);padding:40px 16px}
+.daylabel{font-size:13px;font-weight:650;color:var(--mut);margin:16px 2px 6px}
+.hist{display:flex;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);align-items:flex-start}
+.hist .tm{font-variant-numeric:tabular-nums;color:var(--mut);font-size:14px;width:44px;flex:none;padding-top:1px}
+.badge{display:inline-block;font-size:12px;border-radius:6px;padding:1px 6px;margin-left:4px;background:#eef0f1;color:var(--mut);vertical-align:1px}
+.badge.given{background:var(--okbg);color:var(--ok)} .badge.refused,.badge.skipped{background:var(--badbg);color:var(--bad)} .badge.partial{background:var(--warnbg);color:var(--warn)} .badge.change{background:var(--acc2);color:var(--acc)}
+.tablewrap{overflow-x:auto;margin:10px -12px 0;padding:0 12px}
+table.obs{border-collapse:collapse;font-size:13px;min-width:100%}
+table.obs th,table.obs td{border-bottom:1px solid var(--line);padding:6px 7px;text-align:left;white-space:nowrap;vertical-align:top}
+table.obs th{position:sticky;top:0;background:#fff;font-weight:650;color:var(--mut)}
+table.obs td.y{background:var(--badbg);color:var(--bad);font-weight:600}
+table.obs td.n{color:var(--ok)}
+table.obs td.note{white-space:normal;min-width:160px}
+table.obs td.step{white-space:normal;min-width:90px;max-width:130px;font-size:12px}
+table.obs tr.stepchg td{border-top:2px solid var(--acc)}
+.muted{color:var(--mut)}
+.small{font-size:13px}
+.sec{font-size:13px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;margin:18px 2px 8px}
+.list .li{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list .li:last-child{border-bottom:0}
+#sheet{display:none;position:fixed;inset:0;z-index:50}
+#sheet .bg{position:absolute;inset:0;background:rgba(0,0,0,.35)}
+#sheet .panel{position:absolute;left:0;right:0;bottom:0;max-height:92vh;overflow-y:auto;background:#fff;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+#sheet h3{margin:0 0 12px;font-size:18px}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--mut);margin:12px 0 4px}
+.inp{width:100%;border:1px solid #cdd3d6;border-radius:10px;padding:10px;background:#fff}
+textarea.inp{min-height:70px;resize:vertical}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{border:1px solid #cdd3d6;background:#fff;border-radius:9px;padding:8px 11px;font-size:14px}
+.seg button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.actions{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+.actions .sp{flex:1}
+.swatch{width:32px;height:32px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.swatch.on{box-shadow:0 0 0 2px var(--ink)}
+.mrow{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.mrow .inp{padding:8px}
+.hint{font-size:13px;color:var(--mut);margin-top:6px}
+.banner{background:var(--warnbg);color:#5a3900;border:1px solid #f3d39b;border-radius:12px;padding:10px 12px;margin-bottom:10px;font-size:14px}
+.banner.bad{background:var(--badbg);border-color:#f2c4bf;color:#5c0d07}
+#toast{position:fixed;left:12px;right:12px;z-index:60;display:none;background:#263238;color:#fff;border-radius:12px;padding:11px 14px;align-items:center;gap:10px;max-width:600px;margin:0 auto;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+#toast button{background:none;border:0;color:#8ff0e3;font-weight:650;padding:4px 6px}
+#err{display:none;position:fixed;left:8px;right:8px;top:8px;z-index:99;background:#b3261e;color:#fff;border-radius:10px;padding:10px 12px;font-size:13px;white-space:pre-wrap;word-break:break-word}
+#err button{margin-top:6px;background:#fff;color:#b3261e;border:0;border-radius:6px;padding:4px 10px}
+.login{max-width:380px;margin:40px auto;padding:0 8px}
+code{background:#eef0f1;border-radius:5px;padding:1px 5px;font-size:13px;word-break:break-all}
+</style>
+</head>
+<body>
+<header id="top"><h1>Family Care<span class="date" id="hdate"></span></h1><button id="badge">…</button></header>
+<main id="main"></main>
+<nav id="tabs"></nav>
+<div id="sheet"></div>
+<div id="toast"></div>
+<div id="err"></div>
+
+<script>
+'use strict';
+/* ===================== SETTINGS — paste yours in ===================== */
+const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR-ANON-KEY';
+const BUILD = 1;
+/* ===================================================================== */
+
+/* ---------- error overlay (no console on phones) ---------- */
+function showErr(msg){
+  if (typeof document === 'undefined') { console.error(msg); return; }
+  const e = document.getElementById('err');
+  e.innerHTML = '⚠ ' + esc(String(msg)) + '<br><button onclick="this.parentNode.style.display=\'none\'">Close</button>';
+  e.style.display = 'block';
+}
+window.addEventListener('error', ev => showErr((ev.message || 'Error') + (ev.lineno ? ' (line ' + ev.lineno + ')' : '')));
+window.addEventListener('unhandledrejection', ev => showErr('Problem: ' + ((ev.reason && ev.reason.message) || ev.reason)));
+
+/* ---------- small helpers ---------- */
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+const pad = n => String(n).padStart(2, '0');
+function ymd(d){ d = new Date(d); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); }
+function hm(d){ d = new Date(d); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+function atLocal(dateStr, t){ return new Date(dateStr + 'T' + t + ':00'); }
+function T(s){ if (!s) return 0; if (s instanceof Date) return s.getTime(); return Date.parse(String(s).replace(/(\.\d{3})\d+/, '$1')); }
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtDay(ds){ const d = new Date(ds + 'T12:00:00'); return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+function fmtWhen(iso){ const d = new Date(T(iso)); const today = ymd(new Date()); const yest = ymd(Date.now() - 864e5);
+  const ds = ymd(d); return (ds === today ? '' : ds === yest ? 'yesterday ' : fmtDay(ds) + ' ') + hm(d); }
+function dur(ms){ ms = Math.abs(ms); const m = Math.round(ms/60000); if (m < 60) return m + 'm'; const h = Math.floor(m/60); if (h < 48) return h + 'h' + (m%60 ? ' ' + (m%60) + 'm' : ''); return Math.round(h/24) + ' days'; }
+function uuid(){
+  if (crypto.randomUUID) return crypto.randomUUID();
+  const b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  const h = [...b].map(x => x.toString(16).padStart(2,'0')).join('');
+  return h.slice(0,8)+'-'+h.slice(8,12)+'-'+h.slice(12,16)+'-'+h.slice(16,20)+'-'+h.slice(20);
+}
+function randTopic(){ const b = crypto.getRandomValues(new Uint8Array(15)); return 'care-' + [...b].map(x => 'abcdefghijkmnpqrstuvwxyz23456789'[x % 32]).join(''); }
+const nowIso = () => new Date().toISOString();
+
+/* ---------- local storage (this phone) ---------- */
+const LS = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){ showErr('Could not save on this phone: ' + e.message); } },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+
+const TABLES = ['care_people','care_targets','care_items','care_logs','care_trials','care_obs'];
+const COLS = {
+  care_people:  ['id','name','colour','notes','sort','archived','updated_at','deleted'],
+  care_targets: ['id','label','topic','server','discreet','click_url','updated_at','deleted'],
+  care_items:   ['id','person_id','kind','name','dose','instructions','schedule','start_date','end_date','active','notify','updated_at','deleted'],
+  care_logs:    ['id','item_id','person_id','at','status','dose','note','updated_at','deleted'],
+  care_trials:  ['id','person_id','title','aim','measures','status','conclusion','started_on','ended_on','checkin_time','notify','updated_at','deleted'],
+  care_obs:     ['id','trial_id','person_id','at','day','kind','label','vals','note','updated_at','deleted']
+};
+/* Shared (synced) state lives in DB. Per-phone state: AUTH, OUTBOX, PULLED, FILTER. */
+let DB = LS.get('care_db_v1', null) || {};
+TABLES.forEach(t => { if (!DB[t]) DB[t] = {}; });
+let OUTBOX  = LS.get('care_outbox_v1', {});   // "table:id" -> true  (waiting to upload)
+let PULLED  = LS.get('care_pull_v1', {});     // table -> last server_ts seen
+let AUTH    = LS.get('care_auth_v1', null);
+let MEMBERS = LS.get('care_members_v1', {});
+let FILTER  = LS.get('care_filter_v1', 'all');
+const SYNC  = { state: 'idle', msg: '', last: LS.get('care_lastsync_v1', null) };
+
+function persist(){ LS.set('care_db_v1', DB); LS.set('care_outbox_v1', OUTBOX); LS.set('care_pull_v1', PULLED); }
+function rows(t){ return Object.values(DB[t]).filter(r => !r.deleted); }
+function me(){ return AUTH && AUTH.user_id || null; }
+function pendingCount(){ return Object.keys(OUTBOX).length; }
+
+/* Save a record on this phone and queue it for upload */
+function put(table, row){
+  const prev = DB[table][row.id];
+  const prevT = Math.max(T(prev && prev.updated_at), T(row.updated_at));
+  row.updated_at = new Date(Math.max(Date.now(), prevT + 1)).toISOString(); // always newer than last edit
+  if (!prev && !row.created_by) row.created_by = me();
+  DB[table][row.id] = row;
+  OUTBOX[table + ':' + row.id] = true;
+  persist();
+  scheduleSync();
+  return row;
+}
+function remove(table, row){ return put(table, Object.assign({}, row, { deleted: true })); }
+
+/* ---------- Supabase (plain fetch, no library needed offline) ---------- */
+function configured(){ return !/YOUR-/.test(SUPABASE_URL + SUPABASE_ANON_KEY); }
+async function xfetch(url, opts, ms){
+  const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), ms || 20000);
+  try { return await fetch(url, Object.assign({ signal: ac.signal }, opts)); } finally { clearTimeout(tm); }
+}
+async function authCall(grant, body){
+  const r = await xfetch(SUPABASE_URL + '/auth/v1/token?grant_type=' + grant, {
+    method: 'POST', headers: { apikey: SUPABASE_ANON_KEY, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) { const e = new Error(j.error_description || j.msg || j.message || ('Sign-in failed (' + r.status + ')')); e.status = r.status; throw e; }
+  AUTH = { access_token: j.access_token, refresh_token: j.refresh_token, exp: Date.now() + (j.expires_in || 3600) * 1000,
+           user_id: j.user && j.user.id, email: j.user && j.user.email };
+  LS.set('care_auth_v1', AUTH);
+  return AUTH;
+}
+let refreshing = null;
+async function token(){
+  if (!AUTH || AUTH.needsLogin) return null;
+  if (AUTH.exp - Date.now() > 120000) return AUTH.access_token;
+  if (!refreshing) refreshing = authCall('refresh_token', { refresh_token: AUTH.refresh_token }).finally(() => { refreshing = null; });
+  try { await refreshing; return AUTH.access_token; }
+  catch(e){ if (e.status >= 400 && e.status < 500) { AUTH.needsLogin = true; LS.set('care_auth_v1', AUTH); } throw e; }
+}
+async function api(path, opts){
+  opts = opts || {};
+  const tk = await token(); if (!tk) { const e = new Error('Not signed in'); e.signedOut = true; throw e; }
+  const r = await xfetch(SUPABASE_URL + '/rest/v1/' + path, {
+    method: opts.method || 'GET',
+    headers: Object.assign({ apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + tk, 'Content-Type': 'application/json' }, opts.headers || {}),
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined });
+  if (!r.ok) { let t = ''; try { t = await r.text(); } catch(e){} const e = new Error('Server ' + r.status + ': ' + t.slice(0, 200)); e.status = r.status; throw e; }
+  const txt = await r.text(); return txt ? JSON.parse(txt) : null;
+}
+function pick(r, cols){ const o = {}; cols.forEach(c => { o[c] = r[c] === undefined ? null : r[c]; }); return o; }
+
+/* Merge one row from the server into this phone. Newest edit wins. */
+function merge(t, r){
+  const k = t + ':' + r.id, cur = DB[t][r.id];
+  if (cur && OUTBOX[k]) {
+    if (T(cur.updated_at) > T(r.updated_at)) return false;  // my unsent edit is newer: keep it, it will upload
+    delete OUTBOX[k];                                         // server copy is same or newer
+  }
+  if (cur && cur.updated_at === r.updated_at && cur.server_ts === r.server_ts) return false;
+  DB[t][r.id] = r;
+  return true;
+}
+
+let syncTimer = null, syncing = false, syncAgain = false;
+function scheduleSync(ms){ clearTimeout(syncTimer); syncTimer = setTimeout(sync, ms == null ? 600 : ms); }
+async function sync(){
+  if (!configured()) { SYNC.state = 'config'; drawStatus(); return; }
+  if (syncing) { syncAgain = true; return; }
+  if (!AUTH || AUTH.needsLogin) { SYNC.state = 'signedout'; drawStatus(); return; }
+  syncing = true; SYNC.state = 'syncing'; drawStatus();
+  let changed = false;
+  try {
+    // 0. am I allowed? (non-members see an empty list because of RLS)
+    const mem = await api('care_members?select=user_id,name');
+    MEMBERS = {}; (mem || []).forEach(m => { MEMBERS[m.user_id] = m.name; }); LS.set('care_members_v1', MEMBERS);
+    if (!MEMBERS[me()]) { SYNC.state = 'notmember'; return; }
+    // 1. upload everything waiting
+    for (const t of TABLES) {
+      const keys = Object.keys(OUTBOX).filter(k => k.slice(0, t.length + 1) === t + ':');
+      for (let i = 0; i < keys.length; i += 200) {
+        const chunk = keys.slice(i, i + 200), snap = {}, body = [];
+        chunk.forEach(k => { const r = DB[t][k.slice(t.length + 1)]; if (!r) { delete OUTBOX[k]; return; } snap[k] = r.updated_at; body.push(pick(r, COLS[t])); });
+        if (!body.length) continue;
+        await api(t + '?on_conflict=id&columns=' + COLS[t].join(','), { method: 'POST',
+          headers: { Prefer: 'resolution=merge-duplicates,missing=default,return=minimal' }, body });
+        chunk.forEach(k => { const r = DB[t][k.slice(t.length + 1)]; if (r && r.updated_at === snap[k]) delete OUTBOX[k]; });
+        persist();
+      }
+    }
+    // 2. download what changed (2-minute overlap so nothing slips between)
+    for (const t of TABLES) {
+      const since = PULLED[t] ? new Date(T(PULLED[t]) - 120000).toISOString() : '1970-01-01T00:00:00Z';
+      let offset = 0, maxTs = PULLED[t] || null;
+      for (;;) {
+        const got = await api(t + '?select=*&server_ts=gt.' + encodeURIComponent(since) + '&order=server_ts.asc,id.asc&limit=1000&offset=' + offset) || [];
+        got.forEach(r => { if (merge(t, r)) changed = true; if (!maxTs || T(r.server_ts) > T(maxTs)) maxTs = r.server_ts; });
+        if (got.length < 1000) break; offset += 1000;
+      }
+      if (maxTs) PULLED[t] = maxTs;
+    }
+    persist();
+    SYNC.state = 'ok'; SYNC.msg = ''; SYNC.last = nowIso(); LS.set('care_lastsync_v1', SYNC.last);
+  } catch(e) {
+    if (e.signedOut) SYNC.state = 'signedout';
+    else if (e.name === 'AbortError' || e instanceof TypeError) SYNC.state = 'offline';
+    else if (e.status === 401 || e.status === 403) { SYNC.state = 'error'; SYNC.msg = e.message; }
+    else { SYNC.state = 'error'; SYNC.msg = e.message; }
+  } finally {
+    syncing = false; drawStatus();
+    if (changed) render();
+    if (syncAgain) { syncAgain = false; scheduleSync(300); }
+  }
+}
+
+/* ---------- schedules ---------- */
+const HANDLED = ['given','partial','refused','skipped'];
+const GIVEN = ['given','partial'];
+const DAY = 864e5;
+function schedOf(it){ return it.schedule || { type: 'none' }; }
+function slotTimesOf(s){ return (s.times || []).filter(x => /^\d{1,2}:\d{2}$/.test(x)).map(x => x.padStart(5, '0')).sort(); }
+function slotsFor(it, dateStr){
+  const times = slotTimesOf(schedOf(it)); const n = times.length; if (!n) return [];
+  const dues = times.map(t => atLocal(dateStr, t).getTime());
+  const win = dues.map((d, i) => Math.min(90 * 60000, (n === 1 ? DAY : i === 0 ? dues[0] - dues[n-1] + DAY : dues[i] - dues[i-1]) / 2));
+  return dues.map((d, i) => ({ t: times[i], due: d, from: d - win[i], to: i < n - 1 ? dues[i+1] - win[i+1] : dues[0] + DAY - win[0] }));
+}
+function isCurrent(it, today){
+  return !it.deleted && it.active !== false && (!it.start_date || it.start_date <= today) && (!it.end_date || it.end_date >= today);
+}
+function onDay(it, dateStr){
+  const days = schedOf(it).days || []; if (!days.length) return true;
+  return days.indexOf(new Date(dateStr + 'T12:00:00').getDay()) >= 0;
+}
+function schedSummary(s){
+  s = s || { type: 'none' };
+  if (s.type === 'times') { const d = (s.days || []).length && s.days.length < 7 ? ' (' + s.days.slice().sort().map(x => DAYS[x]).join(', ') + ')' : ''; return (slotTimesOf(s).join(', ') || 'no times') + d; }
+  if (s.type === 'interval') return 'every ' + s.every + ' ' + (s.unit === 'days' ? (s.every == 1 ? 'day' : 'days') : (s.every == 1 ? 'hour' : 'hours'));
+  if (s.type === 'prn') return 'as needed' + (s.gap_hours ? ', ' + s.gap_hours + 'h apart' : '') + (s.max_per_day ? ', max ' + s.max_per_day + '/24h' : '');
+  return 'no schedule';
+}
+function who(id){ return MEMBERS[id] || ''; }
+
+/* Status of one item right now. rank: 0 overdue, 1 due, 2 soon, 3 other, 4 done */
+function itemStatus(it, logs, nowMs){
+  const s = schedOf(it), today = ymd(nowMs);
+  const lastGiven = logs.find(l => GIVEN.indexOf(l.status) >= 0);
+  if (s.type === 'times') {
+    if (!onDay(it, today)) return { rank: 5, line: 'Not today · ' + schedSummary(s), slots: [] };
+    const slots = slotsFor(it, today).map(sl => {
+      const log = logs.find(l => HANDLED.indexOf(l.status) >= 0 && T(l.at) >= sl.from && T(l.at) < sl.to);
+      let st;
+      if (log) st = GIVEN.indexOf(log.status) >= 0 ? 'done' : 'handled';
+      else if (nowMs < sl.due) st = 'upcoming';
+      else if (nowMs >= sl.to) st = 'missed';
+      else if (nowMs < sl.due + 3600000) st = 'due';
+      else st = 'overdue';
+      return Object.assign(sl, { st, log });
+    });
+    const rank = slots.some(x => x.st === 'overdue') ? 0 : slots.some(x => x.st === 'due') ? 1
+      : slots.some(x => x.st === 'upcoming' && x.due - nowMs < 3600000) ? 2 : slots.every(x => x.st === 'done' || x.st === 'handled') ? 4 : 3;
+    const next = slots.find(x => x.st === 'upcoming');
+    const line = lastGiven ? 'Last ' + fmtWhen(lastGiven.at) + (who(lastGiven.created_by) ? ' (' + who(lastGiven.created_by) + ')' : '') : 'Not given yet';
+    return { rank, line: line + (next ? ' · next ' + next.t : ''), slots };
+  }
+  if (s.type === 'interval') {
+    if (!lastGiven) return { rank: 3, line: 'Not given yet · ' + schedSummary(s), slots: [] };
+    const next = T(lastGiven.at) + Number(s.every || 0) * (s.unit === 'days' ? DAY : 3600000);
+    const base = 'Last ' + fmtWhen(lastGiven.at);
+    if (nowMs >= next + 3600000) return { rank: 0, cls: 'bad', line: 'Overdue ' + dur(nowMs - next) + ' · ' + base, slots: [] };
+    if (nowMs >= next) return { rank: 1, cls: 'warn', line: 'Due now · ' + base, slots: [] };
+    return { rank: next - nowMs < 3600000 ? 2 : 3, line: base + ' · next ' + fmtWhen(new Date(next).toISOString()), slots: [] };
+  }
+  if (s.type === 'prn') {
+    const n24 = logs.filter(l => GIVEN.indexOf(l.status) >= 0 && nowMs - T(l.at) < DAY).length;
+    if (!lastGiven) return { rank: 3, line: 'As needed · nothing given yet', slots: [], n24 };
+    const ok = T(lastGiven.at) + Number(s.gap_hours || 0) * 3600000;
+    let line = 'Last ' + fmtWhen(lastGiven.at) + ' · ' + n24 + ' in 24h' + (s.max_per_day ? ' (max ' + s.max_per_day + ')' : '');
+    if (s.gap_hours && nowMs < ok) line += ' · OK from ' + hm(ok);
+    return { rank: 3, line, slots: [], okFrom: ok, n24 };
+  }
+  return { rank: 3, line: lastGiven ? 'Last ' + fmtWhen(lastGiven.at) : 'Nothing logged yet', slots: [] };
+}
+
+/* ---------- UI state ---------- */
+let TAB = LS.get('care_tab_v1', 'today');
+let TRIAL_OPEN = null;
+let HIST_DAYS = 14;
+const COLOURS = ['#2a9d8f','#e76f51','#457b9d','#d4a017','#8e7dbe','#f4a261','#6a994e','#d1495b'];
+const KIND = { med: '💊', therapy: '🤸', other: '📝' };
+const $ = id => document.getElementById(id);
+function people(all){ return rows('care_people').filter(p => all || !p.archived).sort((a, b) => (a.sort || 0) - (b.sort || 0) || String(a.name).localeCompare(b.name)); }
+function pname(id){ const p = DB.care_people[id]; return p ? p.name : '?'; }
+function pcol(id){ const p = DB.care_people[id]; return (p && p.colour) || '#999'; }
+function logsByItem(){
+  const m = {}; rows('care_logs').forEach(l => { (m[l.item_id] = m[l.item_id] || []).push(l); });
+  Object.values(m).forEach(a => a.sort((x, y) => T(y.at) - T(x.at))); return m;
+}
+
+function drawStatus(){
+  if (typeof document === 'undefined') return;
+  const b = $('badge'), n = pendingCount(); b.className = '';
+  const s = SYNC.state;
+  if (s === 'config') { b.textContent = 'Not set up'; b.className = 'bad'; }
+  else if (s === 'syncing') b.textContent = 'Syncing…';
+  else if (s === 'signedout') { b.textContent = n ? 'Sign in · ' + n + ' waiting' : 'Sign in to sync'; b.className = 'warn'; }
+  else if (s === 'notmember') { b.textContent = 'Not a member'; b.className = 'bad'; }
+  else if (s === 'error') { b.textContent = '⚠ Sync problem'; b.className = 'bad'; }
+  else if (s === 'offline') { b.textContent = n ? 'Offline · ' + n + ' waiting' : 'Offline · saved'; b.className = n ? 'warn' : ''; }
+  else if (n) b.textContent = n + ' waiting';
+  else b.textContent = '✓ Synced';
+  $('hdate').textContent = fmtDay(ymd(new Date())) + ' · ' + hm(new Date());
+}
+
+function render(){
+  if (typeof document === 'undefined') return;
+  drawStatus();
+  const tabs = [['today','📋','Today'],['history','🕘','History'],['trials','🧪','Trials'],['setup','⚙️','Setup']];
+  $('tabs').innerHTML = tabs.map(t => '<button data-tab="' + t[0] + '" class="' + (TAB === t[0] ? 'on' : '') + '"><span class="ic">' + t[1] + '</span>' + t[2] + '</button>').join('');
+  if (!configured()) { $('main').innerHTML = '<div class="login"><h2>Almost there</h2><p>Open <code>index.html</code> and paste your Supabase project URL and anon key at the top (same ones as your other apps), then upload again.</p></div>'; return; }
+  if (!AUTH && !Object.keys(DB.care_people).length) { $('main').innerHTML = loginHtml(); bindLogin(); $('tabs').style.display = 'none'; return; }
+  $('tabs').style.display = '';
+  let h = '';
+  if (AUTH && AUTH.needsLogin || (!AUTH && Object.keys(DB.care_people).length)) h += '<div class="banner">Your sign-in has expired. Everything you record is kept on this phone. <button class="link" data-act="relogin">Sign in again</button> to upload it.</div>';
+  if (SYNC.state === 'notmember') h += '<div class="banner bad">This login isn\'t on the app\'s members list yet. Add it with step 6 of the SQL file, then tap the sync badge.</div>';
+  if (TAB === 'today') h += viewToday();
+  else if (TAB === 'history') h += viewHistory();
+  else if (TAB === 'trials') h += TRIAL_OPEN && DB.care_trials[TRIAL_OPEN] ? viewTrial(DB.care_trials[TRIAL_OPEN]) : viewTrials();
+  else h += viewSetup();
+  $('main').innerHTML = h;
+}
+
+function personChips(){
+  const ps = people(); if (ps.length < 2) return '';
+  return '<div class="chips"><button class="chip ' + (FILTER === 'all' ? 'on' : '') + '" data-filter="all">Everyone</button>' +
+    ps.map(p => '<button class="chip ' + (FILTER === p.id ? 'on' : '') + '" data-filter="' + p.id + '"><span class="dot" style="background:' + esc(p.colour || '#999') + '"></span>' + esc(p.name) + '</button>').join('') + '</div>';
+}
+function inFilter(pid){ return FILTER === 'all' || FILTER === pid || !DB.care_people[FILTER]; }
+
+/* ---------- Today ---------- */
+function viewToday(){
+  const nowMs = Date.now(), today = ymd(nowMs), lbi = logsByItem();
+  let h = personChips(), any = false;
+  people().filter(p => inFilter(p.id)).forEach(p => {
+    const items = rows('care_items').filter(i => i.person_id === p.id && isCurrent(i, today))
+      .map(i => ({ i, st: itemStatus(i, lbi[i.id] || [], nowMs) })).sort((a, b) => a.st.rank - b.st.rank || String(a.i.name).localeCompare(b.i.name));
+    const trials = rows('care_trials').filter(t => t.person_id === p.id && t.status === 'active');
+    if (!items.length && !trials.length) return;
+    any = true;
+    h += '<h2 class="ph"><span class="dot" style="background:' + esc(p.colour || '#999') + '"></span>' + esc(p.name) + '</h2>';
+    items.forEach(x => { h += itemCard(x.i, x.st); });
+    trials.forEach(t => { h += trialMini(t); });
+  });
+  if (!any) h += '<div class="empty">' + (people().length ? 'Nothing active for today.' : 'Nothing set up yet.') + '<br><br><button class="btn primary" data-tab="setup">Go to Setup</button></div>';
+  return h;
+}
+function itemCard(it, st){
+  const s = schedOf(it);
+  let slots = '';
+  if (st.slots && st.slots.length) slots = '<div class="slots">' + st.slots.map(sl => {
+    let txt = sl.t;
+    if (sl.st === 'done') txt += ' ✓ ' + hm(sl.log.at) + (who(sl.log.created_by) ? ' ' + esc(who(sl.log.created_by)) : '');
+    else if (sl.st === 'handled') txt += ' · ' + sl.log.status;
+    else if (sl.st === 'due') txt += ' due';
+    else if (sl.st === 'overdue') txt += ' overdue';
+    else if (sl.st === 'missed') txt += ' missed';
+    return '<button class="slot ' + sl.st + '" data-act="slot" data-id="' + it.id + '" data-t="' + sl.t + '"' + (sl.log ? ' data-log="' + sl.log.id + '"' : '') + '>' + txt + '</button>';
+  }).join('') + '</div>';
+  const cls = st.cls || (st.rank === 0 ? 'bad' : st.rank === 1 ? 'warn' : st.rank === 4 ? 'ok' : '');
+  return '<div class="card"><div class="row"><div class="grow"><div class="title">' + (KIND[it.kind] || '') + ' ' + esc(it.name) +
+    (it.dose ? ' <span class="dose">' + esc(it.dose) + '</span>' : '') + '</div>' +
+    '<div class="sub ' + cls + '">' + esc(st.line) + '</div>' +
+    (it.instructions ? '<div class="sub small">' + esc(it.instructions) + '</div>' : '') + '</div>' +
+    '<button class="btn primary" data-act="give" data-id="' + it.id + '">' + (s.type === 'none' ? 'Log' : 'Given') + '</button></div>' +
+    slots + '<button class="link" data-act="logmore" data-id="' + it.id + '">Other / earlier time…</button></div>';
+}
+function trialDayNo(t){ if (!t.started_on) return ''; return 'Day ' + (Math.floor((T(ymd(new Date()) + 'T12:00:00') - T(t.started_on + 'T12:00:00')) / DAY) + 1); }
+function currentStep(t){
+  const st = rows('care_obs').filter(o => o.trial_id === t.id && o.kind === 'step').sort((a, b) => String(b.day).localeCompare(String(a.day)) || T(b.at) - T(a.at));
+  return st[0] || null;
+}
+function trialMini(t){
+  const today = ymd(new Date());
+  const done = rows('care_obs').some(o => o.trial_id === t.id && o.kind === 'obs' && (o.day === today || ymd(T(o.at)) === today));
+  const step = currentStep(t);
+  return '<div class="card"><div class="row"><div class="grow" data-act="opentrial" data-id="' + t.id + '"><div class="title">🧪 ' + esc(t.title) + '</div>' +
+    '<div class="sub">' + [trialDayNo(t), step ? 'Step: ' + esc(step.label) : ''].filter(Boolean).join(' · ') + '</div>' +
+    '<div class="sub ' + (done ? 'ok' : 'warn') + '">' + (done ? 'Recorded today ✓' : 'Not recorded today') + '</div></div>' +
+    '<button class="btn primary" data-act="record" data-id="' + t.id + '">Record</button></div></div>';
+}
+
+/* ---------- History ---------- */
+function viewHistory(){
+  const since = Date.now() - HIST_DAYS * DAY;
+  const ev = [];
+  rows('care_logs').forEach(l => { if (T(l.at) >= since && inFilter(l.person_id)) ev.push({ k: 'log', at: T(l.at), r: l }); });
+  rows('care_obs').forEach(o => { if (T(o.at) >= since && inFilter(o.person_id)) ev.push({ k: 'obs', at: T(o.at), r: o }); });
+  ev.sort((a, b) => b.at - a.at);
+  let h = personChips(), day = '';
+  if (!ev.length) h += '<div class="empty">Nothing recorded in the last ' + HIST_DAYS + ' days.</div>';
+  ev.forEach(e => {
+    const d = ymd(e.at); if (d !== day) { day = d; h += '<div class="daylabel">' + fmtDay(d) + '</div>'; }
+    const r = e.r;
+    if (e.k === 'log') {
+      const it = DB.care_items[r.item_id] || {};
+      h += '<div class="hist" data-act="editlog" data-id="' + r.id + '"><div class="tm">' + hm(e.at) + '</div><div class="grow"><span class="dot" style="background:' + esc(pcol(r.person_id)) + '"></span>' +
+        '<b>' + esc(it.name || '(deleted item)') + '</b><span class="badge ' + esc(r.status) + '">' + esc(r.status === 'change' ? 'change' : r.status) + '</span>' +
+        '<div class="sub">' + [esc(pname(r.person_id)), r.dose ? esc(r.dose) : '', who(r.created_by) ? 'by ' + esc(who(r.created_by)) : ''].filter(Boolean).join(' · ') + '</div>' +
+        (r.note ? '<div class="sub">' + esc(r.note) + '</div>' : '') + '</div></div>';
+    } else {
+      const t = DB.care_trials[r.trial_id] || {};
+      let body = '';
+      if (r.kind === 'step') body = 'New step: <b>' + esc(r.label) + '</b>';
+      else if (r.kind === 'note') body = 'Note';
+      else body = obsSummary(t, r);
+      h += '<div class="hist" data-act="editobs" data-id="' + r.id + '"><div class="tm">' + hm(e.at) + '</div><div class="grow"><span class="dot" style="background:' + esc(pcol(r.person_id)) + '"></span>' +
+        '<b>🧪 ' + esc(t.title || '(deleted)') + '</b>' + (r.day && r.day !== ymd(e.at) ? ' <span class="badge">for ' + fmtDay(r.day) + '</span>' : '') +
+        '<div class="sub">' + body + '</div>' + (r.note ? '<div class="sub">' + esc(r.note) + '</div>' : '') + '</div></div>';
+    }
+  });
+  h += '<div style="text-align:center;margin:16px"><button class="btn small" data-act="more">Show older</button></div>';
+  return h;
+}
+function fmtVal(m, v){
+  if (v === undefined || v === null || v === '') return '';
+  if (m.type === 'yesno') return v ? 'Yes' : 'No';
+  if (m.type === 'scale') return v + '/' + (m.max || 5);
+  if (m.type === 'number') return v + (m.unit ? ' ' + m.unit : '');
+  return String(v);
+}
+function obsSummary(t, o){
+  const ms = (t.measures || []);
+  const parts = ms.filter(m => o.vals && o.vals[m.id] !== undefined).map(m => esc(m.name) + ': ' + esc(fmtVal(m, o.vals[m.id])));
+  return parts.join(' · ') || 'Observation';
+}
+
+/* ---------- Trials (interventions) ---------- */
+function viewTrials(){
+  const ts = rows('care_trials').filter(t => inFilter(t.person_id)).sort((a, b) => (a.status === 'active' ? 0 : 1) - (b.status === 'active' ? 0 : 1) || String(b.started_on || '').localeCompare(String(a.started_on || '')));
+  let h = personChips() + '<button class="btn primary" data-act="newtrial" style="width:100%;margin-bottom:12px">+ New intervention</button>';
+  if (!ts.length) h += '<div class="empty">Interventions let you change one thing (e.g. introduce milk) and record chosen outcomes (night, stools…) side by side, day by day.</div>';
+  ts.forEach(t => {
+    const step = currentStep(t);
+    h += '<div class="card" data-act="opentrial" data-id="' + t.id + '"><div class="title"><span class="dot" style="background:' + esc(pcol(t.person_id)) + '"></span>' + esc(t.title) +
+      ' <span class="badge">' + esc(t.status) + '</span></div><div class="sub">' + [esc(pname(t.person_id)), t.status === 'active' ? trialDayNo(t) : (t.started_on ? fmtDay(t.started_on) + (t.ended_on ? ' – ' + fmtDay(t.ended_on) : '') : ''), step ? 'Step: ' + esc(step.label) : ''].filter(Boolean).join(' · ') + '</div></div>';
+  });
+  return h;
+}
+function trialGrid(t){
+  const obs = rows('care_obs').filter(o => o.trial_id === t.id);
+  const ms = (t.measures || []).filter(m => !m.hidden);
+  const dayOf = o => o.day || ymd(T(o.at));
+  const today = ymd(new Date());
+  let start = t.started_on || today; obs.forEach(o => { if (dayOf(o) < start) start = dayOf(o); });
+  let end = t.ended_on && t.status !== 'active' ? t.ended_on : today; obs.forEach(o => { if (dayOf(o) > end) end = dayOf(o); });
+  const days = []; const withData = new Set(obs.map(dayOf));
+  for (let d = new Date(start + 'T12:00:00'); ymd(d) <= end && days.length < 400; d = new Date(d.getTime() + DAY)) days.push(ymd(d));
+  const useDays = days.length > 90 ? days.filter(d => withData.has(d)) : days;
+  const steps = obs.filter(o => o.kind === 'step').sort((a, b) => dayOf(a).localeCompare(dayOf(b)) || T(a.at) - T(b.at));
+  return useDays.map(d => {
+    const st = steps.filter(s => dayOf(s) <= d).pop();
+    const changed = steps.some(s => dayOf(s) === d);
+    const dayObs = obs.filter(o => o.kind === 'obs' && dayOf(o) === d).sort((a, b) => T(a.at) - T(b.at));
+    const vals = ms.map(m => dayObs.map(o => o.vals ? o.vals[m.id] : undefined).filter(v => v !== undefined && v !== null && v !== ''));
+    const notes = obs.filter(o => dayOf(o) === d && o.note).sort((a, b) => T(a.at) - T(b.at)).map(o => o.note);
+    return { d, step: st ? st.label : 'Baseline', changed, vals, notes, recorded: dayObs.length > 0 };
+  });
+}
+function viewTrial(t){
+  const ms = (t.measures || []).filter(m => !m.hidden);
+  const grid = trialGrid(t).slice().reverse();
+  let h = '<button class="link" data-act="closetrial">‹ All interventions</button>' +
+    '<div class="card"><div class="title" style="font-size:18px">' + esc(t.title) + ' <span class="badge">' + esc(t.status) + '</span></div>' +
+    '<div class="sub"><span class="dot" style="background:' + esc(pcol(t.person_id)) + '"></span>' + esc(pname(t.person_id)) + (t.started_on ? ' · from ' + fmtDay(t.started_on) : '') + (t.ended_on ? ' to ' + fmtDay(t.ended_on) : '') + (t.status === 'active' ? ' · ' + trialDayNo(t) : '') + '</div>' +
+    (t.aim ? '<div class="sub">' + esc(t.aim) + '</div>' : '') +
+    (t.conclusion ? '<div class="sub"><b>Conclusion:</b> ' + esc(t.conclusion) + '</div>' : '') +
+    '<div class="actions"><button class="btn primary" data-act="record" data-id="' + t.id + '">Record</button><button class="btn" data-act="newstep" data-id="' + t.id + '">New step</button><button class="btn" data-act="trialnote" data-id="' + t.id + '">Note</button><span class="sp"></span><button class="btn small" data-act="edittrial" data-id="' + t.id + '">Edit</button><button class="btn small" data-act="csv" data-id="' + t.id + '">CSV</button></div></div>';
+  if (!grid.length) return h + '<div class="empty">No days yet.</div>';
+  h += '<div class="tablewrap"><table class="obs"><thead><tr><th>Day</th><th>Step</th>' + ms.map(m => '<th>' + esc(m.name) + '</th>').join('') + '<th>Notes</th></tr></thead><tbody>';
+  grid.forEach(r => {
+    h += '<tr class="' + (r.changed ? 'stepchg' : '') + '"><td>' + fmtDay(r.d).replace(/ \w+$/, '') + '</td><td class="step">' + (r.changed ? '● ' : '') + esc(r.step) + '</td>' +
+      ms.map((m, i) => cellHtml(m, r.vals[i], r.recorded)).join('') + '<td class="note">' + esc(r.notes.join(' / ')) + '</td></tr>';
+  });
+  return h + '</tbody></table></div><p class="hint">Newest at the top. ● marks the day a step changed. Blank = not recorded.</p>';
+}
+function cellHtml(m, vs){
+  if (!vs.length) return '<td class="muted">–</td>';
+  if (m.type === 'yesno') { const any = vs.some(Boolean); return '<td class="' + (any ? 'y' : 'n') + '">' + (vs.length > 1 ? vs.map(v => v ? 'Y' : 'N').join('/') : (any ? 'Yes' : 'No')) + '</td>'; }
+  if (m.type === 'scale') { const mx = Number(m.max || 5), v = Math.max.apply(null, vs.map(Number)); return '<td style="background:rgba(31,111,104,' + (0.08 + 0.5 * v / mx).toFixed(2) + ')">' + vs.join('/') + '</td>'; }
+  return '<td>' + esc(vs.map(v => fmtVal(m, v)).join(' / ')) + '</td>';
+}
+function trialCsv(t){
+  const ms = (t.measures || []).filter(m => !m.hidden);
+  const q = s => '"' + String(s == null ? '' : s).replace(/"/g, '""') + '"';
+  const lines = [['Date','Step'].concat(ms.map(m => m.name + (m.type === 'scale' ? ' (0-' + (m.max || 5) + ')' : m.unit ? ' (' + m.unit + ')' : '')), ['Notes']).map(q).join(',')];
+  trialGrid(t).forEach(r => lines.push([r.d, r.step].concat(ms.map((m, i) => r.vals[i].map(v => m.type === 'yesno' ? (v ? 'Yes' : 'No') : v).join(' / ')), [r.notes.join(' / ')]).map(q).join(',')));
+  download((t.title || 'intervention').replace(/[^\w-]+/g, '_') + '.csv', lines.join('\r\n'), 'text/csv');
+}
+function download(name, text, type){
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+
+/* ---------- Setup ---------- */
+function viewSetup(){
+  const n = pendingCount();
+  let h = '<div class="sec">Sync</div><div class="card">' +
+    (AUTH ? '<div>Signed in as <b>' + esc(MEMBERS[me()] || AUTH.email || '') + '</b> <span class="muted small">' + esc(AUTH.email || '') + '</span></div>' : '<div>Not signed in</div>') +
+    '<div class="sub">' + (SYNC.last ? 'Last synced ' + fmtWhen(SYNC.last) : 'Never synced') + ' · ' + (n ? n + ' change' + (n > 1 ? 's' : '') + ' waiting to upload' : 'nothing waiting') + '</div>' +
+    (SYNC.msg ? '<div class="sub bad">' + esc(SYNC.msg) + '</div>' : '') +
+    '<div class="actions"><button class="btn" data-act="syncnow">Sync now</button>' + (AUTH && !AUTH.needsLogin ? '<button class="btn" data-act="signout">Sign out</button>' : '<button class="btn primary" data-act="relogin">Sign in</button>') + '</div></div>';
+
+  h += '<div class="sec">People</div><div class="card list">';
+  people(true).forEach(p => { h += '<div class="li" data-act="editperson" data-id="' + p.id + '"><span class="dot" style="background:' + esc(p.colour || '#999') + '"></span><span class="grow">' + esc(p.name) + (p.archived ? ' <span class="badge">archived</span>' : '') + '</span><span class="muted">›</span></div>'; });
+  h += '<div class="li"><button class="link" data-act="newperson">+ Add person</button></div></div>';
+
+  h += '<div class="sec">Medicines &amp; therapies</div>';
+  const today = ymd(new Date());
+  const ps = people(true);
+  if (!ps.length) h += '<div class="card muted">Add a person first.</div>';
+  ps.forEach(p => {
+    const its = rows('care_items').filter(i => i.person_id === p.id).sort((a, b) => (isCurrent(b, today) ? 1 : 0) - (isCurrent(a, today) ? 1 : 0) || String(a.name).localeCompare(b.name));
+    h += '<div class="card list"><div class="title"><span class="dot" style="background:' + esc(p.colour || '#999') + '"></span>' + esc(p.name) + '</div>';
+    its.forEach(i => {
+      const tag = i.active === false ? 'stopped' : i.end_date && i.end_date < today ? 'finished' : i.start_date && i.start_date > today ? 'starts ' + fmtDay(i.start_date) : '';
+      h += '<div class="li" data-act="edititem" data-id="' + i.id + '"><span>' + (KIND[i.kind] || '') + '</span><span class="grow">' + esc(i.name) + (i.dose ? ' <span class="dose">' + esc(i.dose) + '</span>' : '') +
+        '<div class="sub small">' + esc(schedSummary(i.schedule)) + ((i.notify || []).length ? ' · 🔔' : '') + (tag ? ' · ' + esc(tag) : '') + '</div></span><span class="muted">›</span></div>';
+    });
+    h += '<div class="li"><button class="link" data-act="newitem" data-person="' + p.id + '">+ Add for ' + esc(p.name) + '</button></div></div>';
+  });
+
+  h += '<div class="sec">Reminder phones (ntfy)</div><div class="card list">';
+  rows('care_targets').forEach(t => { h += '<div class="li" data-act="edittarget" data-id="' + t.id + '"><span>🔔</span><span class="grow">' + esc(t.label) + (t.discreet ? ' <span class="badge">discreet</span>' : '') + '<div class="sub small">' + esc(t.topic) + '</div></span><span class="muted">›</span></div>'; });
+  h += '<div class="li"><button class="link" data-act="newtarget">+ Add a phone</button></div></div>' +
+    '<p class="hint">Reminders are sent by your Supabase project every 5 minutes, so they arrive even when this app is closed. Each medicine chooses which phones get its reminders.</p>';
+
+  h += '<div class="sec">Backup</div><div class="card"><button class="btn" data-act="backup">Download everything (JSON)</button><p class="hint">Data is also in Supabase. Build ' + BUILD + '.</p></div>';
+  return h;
+}
+
+/* ---------- sheets (pop-up forms) ---------- */
+function openSheet(html){ const s = $('sheet'); s.innerHTML = '<div class="bg" data-act="close"></div><div class="panel">' + html + '</div>'; s.style.display = 'block'; s.querySelector('.panel').scrollTop = 0; }
+function closeSheet(){ const s = $('sheet'); s.style.display = 'none'; s.innerHTML = ''; }
+function sheetOpen(){ return $('sheet').style.display === 'block'; }
+function val(id){ const e = $(id); return e ? e.value.trim() : ''; }
+function segHtml(name, opts, cur){ return '<div class="seg" data-seg="' + name + '">' + opts.map(o => '<button type="button" data-v="' + esc(o[0]) + '" class="' + (String(cur) === String(o[0]) ? 'on' : '') + '">' + esc(o[1]) + '</button>').join('') + '</div>'; }
+function segVal(name){ const b = document.querySelector('[data-seg="' + name + '"] button.on'); return b ? b.dataset.v : null; }
+function localInput(ms){ const d = new Date(ms); return ymd(d) + 'T' + hm(d); }
+function notifyPicker(sel){
+  const ts = rows('care_targets');
+  if (!ts.length) return '<div class="hint">No reminder phones yet — add one in Setup to get ntfy alerts.</div>';
+  return ts.map(t => '<label style="display:flex;gap:8px;align-items:center;padding:4px 0"><input type="checkbox" class="nt" value="' + t.id + '"' + ((sel || []).indexOf(t.id) >= 0 ? ' checked' : '') + '> ' + esc(t.label) + '</label>').join('');
+}
+function notifyVal(){ return [...document.querySelectorAll('#sheet .nt:checked')].map(x => x.value); }
+
+let toastTimer = null;
+function toast(msg, label, fn){
+  const t = $('toast'); t.innerHTML = '<span class="grow">' + esc(msg) + '</span>' + (label ? '<button id="toastbtn">' + esc(label) + '</button>' : '');
+  t.style.bottom = ($('tabs').offsetHeight + 10) + 'px'; t.style.display = 'flex';
+  if (label) $('toastbtn').onclick = () => { t.style.display = 'none'; fn(); };
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.style.display = 'none'; }, 6000);
+}
+
+/* -- logging a dose -- */
+function newLog(it, atMs, status, dose, note){
+  return put('care_logs', { id: uuid(), item_id: it.id, person_id: it.person_id, at: new Date(atMs).toISOString(), status: status || 'given', dose: dose == null ? (it.dose || '') : dose, note: note || '', deleted: false });
+}
+function quickGive(it){
+  const s = schedOf(it);
+  if (s.type === 'prn') {
+    const st = itemStatus(it, logsByItem()[it.id] || [], Date.now());
+    if (st.okFrom && Date.now() < st.okFrom && !confirm('Only ' + dur(Date.now() - (st.okFrom - s.gap_hours * 3600000)) + ' since the last dose (you set ' + s.gap_hours + 'h). Record anyway?')) return;
+    if (s.max_per_day && st.n24 >= s.max_per_day && !confirm(st.n24 + ' already given in 24h (you set max ' + s.max_per_day + '). Record anyway?')) return;
+  }
+  const l = newLog(it, Date.now(), 'given');
+  render();
+  toast(it.name + ' · ' + hm(l.at), 'Undo', () => { remove('care_logs', l); render(); });
+}
+function logSheet(it, log, presetMs){
+  const isNew = !log;
+  log = log || { status: 'given', at: new Date(presetMs || Date.now()).toISOString(), dose: it.dose || '', note: '' };
+  openSheet('<h3>' + (KIND[it.kind] || '') + ' ' + esc(it.name) + ' <span class="dose">' + esc(pname(it.person_id)) + '</span></h3>' +
+    '<label class="f">What happened</label>' + segHtml('status', [['given','Given'],['partial','Partly'],['refused','Refused'],['skipped','Skipped']].concat(log.status === 'change' ? [['change','Change']] : []), log.status) +
+    '<label class="f">When</label><input type="datetime-local" class="inp" id="l_at" value="' + localInput(T(log.at)) + '">' +
+    '<label class="f">Dose / amount</label><input class="inp" id="l_dose" value="' + esc(log.dose || '') + '">' +
+    '<label class="f">Note</label><textarea class="inp" id="l_note" placeholder="e.g. spat some out, given with yoghurt">' + esc(log.note || '') + '</textarea>' +
+    (!isNew && log.created_by ? '<div class="hint">Recorded by ' + esc(who(log.created_by) || 'someone') + '</div>' : '') +
+    '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="l_del">Delete</button>') + '<span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="l_save">Save</button></div>');
+  $('l_save').onclick = () => {
+    const at = new Date($('l_at').value); if (isNaN(at)) { alert('Please set a time'); return; }
+    const row = Object.assign({}, isNew ? { id: uuid(), item_id: it.id, person_id: it.person_id, deleted: false } : log,
+      { status: segVal('status') || 'given', at: at.toISOString(), dose: val('l_dose'), note: val('l_note') });
+    put('care_logs', row); closeSheet(); render();
+  };
+  if (!isNew) $('l_del').onclick = () => { if (confirm('Delete this entry?')) { remove('care_logs', log); closeSheet(); render(); } };
+}
+
+/* -- people -- */
+function personSheet(p){
+  const isNew = !p; p = p || { id: uuid(), name: '', colour: COLOURS[people(true).length % COLOURS.length], notes: '', sort: people(true).length, archived: false, deleted: false };
+  let colour = p.colour;
+  openSheet('<h3>' + (isNew ? 'Add person' : 'Edit person') + '</h3><label class="f">Name</label><input class="inp" id="p_name" value="' + esc(p.name) + '" placeholder="Name or initial (pets work too)">' +
+    '<label class="f">Colour</label><div class="seg" id="p_col">' + COLOURS.map(c => '<button type="button" class="swatch ' + (c === colour ? 'on' : '') + '" data-c="' + c + '" style="background:' + c + '"></button>').join('') + '</div>' +
+    '<label class="f">Notes (allergies, weight for dosing, etc.)</label><textarea class="inp" id="p_notes">' + esc(p.notes || '') + '</textarea>' +
+    (isNew ? '' : '<label style="display:flex;gap:8px;margin-top:12px"><input type="checkbox" id="p_arch"' + (p.archived ? ' checked' : '') + '> Archived (hidden from Today)</label>') +
+    '<div class="actions"><span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="p_save">Save</button></div>');
+  $('p_col').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; colour = b.dataset.c; [...$('p_col').children].forEach(x => x.classList.toggle('on', x === b)); };
+  $('p_save').onclick = () => {
+    if (!val('p_name')) { alert('Please add a name'); return; }
+    put('care_people', Object.assign({}, p, { name: val('p_name'), colour, notes: val('p_notes'), archived: isNew ? false : $('p_arch').checked }));
+    closeSheet(); render();
+  };
+}
+
+/* -- medicines / therapies -- */
+function itemSheet(it, personId){
+  const isNew = !it;
+  it = it || { id: uuid(), person_id: personId, kind: 'med', name: '', dose: '', instructions: '', schedule: { type: 'times', times: ['08:00'], days: [] }, start_date: ymd(new Date()), end_date: null, active: true, notify: rows('care_targets').length === 1 ? [rows('care_targets')[0].id] : [], deleted: false };
+  const s = JSON.parse(JSON.stringify(schedOf(it)));
+  let times = (s.times && s.times.length ? s.times : ['08:00']).slice();
+  let days = (s.days || []).slice();
+  const readTimes = () => { const els = document.querySelectorAll('#i_sched .tm'); if (els.length) times = [...els].map(x => x.value); };
+  const draw = () => {
+    const ty = segVal('stype') || s.type;
+    $('i_sched').innerHTML =
+      ty === 'times' ? '<label class="f">Times each day</label>' + times.map((t, i) => '<div class="mrow"><input type="time" class="inp tm" data-i="' + i + '" value="' + esc(t) + '"><button type="button" class="btn small" data-rmt="' + i + '">✕</button></div>').join('') +
+        '<button type="button" class="link" id="i_addt">+ Add a time</button><label class="f">Days (none selected = every day)</label><div class="seg" id="i_days">' + [1,2,3,4,5,6,0].map(d => '<button type="button" data-d="' + d + '" class="' + (days.indexOf(d) >= 0 ? 'on' : '') + '">' + DAYS[d] + '</button>').join('') + '</div>'
+      : ty === 'interval' ? '<label class="f">Every</label><div class="mrow"><input type="number" min="0" step="any" class="inp" id="i_every" value="' + esc(s.every || 8) + '" style="width:90px">' + segHtml('unit', [['hours','hours'],['days','days']], s.unit || 'hours') + '</div><div class="hint">Counted from the last dose given. Good for antibiotics, or weekly/monthly things.</div>'
+      : ty === 'prn' ? '<label class="f">At least this many hours apart</label><input type="number" min="0" step="any" class="inp" id="i_gap" value="' + esc(s.gap_hours || '') + '"><label class="f">Max doses in 24 hours</label><input type="number" min="0" class="inp" id="i_max" value="' + esc(s.max_per_day || '') + '"><div class="hint">You\'ll get a warning (not a block) if you go outside these.</div>'
+      : '<div class="hint">Just a log — no due times.</div>';
+    $('i_notify').style.display = (ty === 'times' || ty === 'interval') ? '' : 'none';
+    document.querySelectorAll('#i_sched .tm').forEach(x => { x.onchange = () => { times[+x.dataset.i] = x.value; }; });
+    document.querySelectorAll('#i_sched [data-rmt]').forEach(x => { x.onclick = () => { readTimes(); times.splice(+x.dataset.rmt, 1); draw(); }; });
+    if ($('i_addt')) $('i_addt').onclick = () => { readTimes(); times.push(''); draw(); };
+    if ($('i_days')) $('i_days').onclick = e => { const b = e.target.closest('[data-d]'); if (!b) return; const d = +b.dataset.d; const k = days.indexOf(d); if (k >= 0) days.splice(k, 1); else days.push(d); b.classList.toggle('on'); };
+    if (ty === 'interval') { s.every = s.every || 8; }
+  };
+  openSheet('<h3>' + (isNew ? 'Add for ' + esc(pname(it.person_id)) : 'Edit ' + esc(it.name)) + '</h3>' +
+    '<label class="f">Type</label>' + segHtml('kind', [['med','💊 Medicine'],['therapy','🤸 Therapy'],['other','📝 Other']], it.kind) +
+    '<label class="f">Name</label><input class="inp" id="i_name" value="' + esc(it.name) + '" placeholder="e.g. Omeprazole, physio stretches">' +
+    '<label class="f">Dose / amount</label><input class="inp" id="i_dose" value="' + esc(it.dose || '') + '" placeholder="e.g. 5 mg, 2.5 ml, 10 mins">' +
+    '<label class="f">Instructions</label><input class="inp" id="i_instr" value="' + esc(it.instructions || '') + '" placeholder="e.g. 30 mins before food">' +
+    '<label class="f">Schedule</label>' + segHtml('stype', [['times','Set times'],['interval','Every…'],['prn','As needed'],['none','No schedule']], s.type) +
+    '<div id="i_sched"></div>' +
+    '<div class="mrow" style="margin-top:4px"><div class="grow"><label class="f">Start</label><input type="date" class="inp" id="i_start" value="' + esc(it.start_date || '') + '"></div><div class="grow"><label class="f">End (courses)</label><input type="date" class="inp" id="i_end" value="' + esc(it.end_date || '') + '"></div></div>' +
+    '<div id="i_notify"><label class="f">Send reminders to</label>' + notifyPicker(it.notify) + '</div>' +
+    (isNew ? '' : '<label style="display:flex;gap:8px;margin-top:12px"><input type="checkbox" id="i_active"' + (it.active !== false ? ' checked' : '') + '> Active (untick to stop it)</label>') +
+    '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="i_del">Delete</button>') + '<span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="i_save">Save</button></div>');
+  draw();
+  document.querySelector('[data-seg="stype"]').addEventListener('click', () => { readTimes(); setTimeout(draw, 0); });
+  $('i_save').onclick = () => {
+    if (!val('i_name')) { alert('Please add a name'); return; }
+    const ty = segVal('stype') || 'none';
+    let ns = { type: ty };
+    readTimes();
+    if (ty === 'times') { ns.times = times.filter(Boolean).sort(); ns.days = days.slice().sort(); if (!ns.times.length) { alert('Add at least one time'); return; } }
+    if (ty === 'interval') { ns.every = Number(val('i_every')); ns.unit = segVal('unit') || 'hours'; if (!(ns.every > 0)) { alert('How often?'); return; } }
+    if (ty === 'prn') { ns.gap_hours = Number(val('i_gap')) || null; ns.max_per_day = Number(val('i_max')) || null; }
+    const nw = Object.assign({}, it, { kind: segVal('kind') || 'med', name: val('i_name'), dose: val('i_dose'), instructions: val('i_instr'), schedule: ns,
+      start_date: val('i_start') || null, end_date: val('i_end') || null, active: isNew ? true : $('i_active').checked, notify: notifyVal() });
+    // record what changed, so starts/stops/dose changes show in History
+    const ch = [];
+    if (isNew) ch.push('Started' + (nw.dose ? ' · ' + nw.dose : '') + ' · ' + schedSummary(ns) + (nw.start_date && nw.start_date !== ymd(new Date()) ? ' · from ' + fmtDay(nw.start_date) : ''));
+    else {
+      if ((it.dose || '') !== nw.dose) ch.push('Dose ' + (it.dose || '–') + ' → ' + (nw.dose || '–'));
+      if (schedSummary(it.schedule) !== schedSummary(ns)) ch.push('Schedule ' + schedSummary(it.schedule) + ' → ' + schedSummary(ns));
+      if ((it.active !== false) && !nw.active) ch.push('Stopped');
+      if ((it.active === false) && nw.active) ch.push('Restarted');
+      if ((it.end_date || '') !== (nw.end_date || '')) ch.push('End date ' + (nw.end_date ? fmtDay(nw.end_date) : 'removed'));
+      if (it.name !== nw.name) ch.push('Renamed from ' + it.name);
+    }
+    put('care_items', nw);
+    if (ch.length) newLog(nw, Date.now(), 'change', nw.dose, ch.join('; '));
+    closeSheet(); render();
+  };
+  if (!isNew) $('i_del').onclick = () => { if (confirm('Delete ' + it.name + '? Its history stays but shows as a deleted item. (Untick Active instead to just stop it.)')) { remove('care_items', it); closeSheet(); render(); } };
+}
+
+/* -- ntfy targets -- */
+function targetSheet(tg){
+  const isNew = !tg;
+  tg = tg || { id: uuid(), label: '', topic: randTopic(), server: '', discreet: false, click_url: location.href.split('#')[0].split('?')[0], deleted: false };
+  openSheet('<h3>' + (isNew ? 'Add a reminder phone' : 'Edit ' + esc(tg.label)) + '</h3>' +
+    '<label class="f">Name</label><input class="inp" id="t_label" value="' + esc(tg.label) + '" placeholder="e.g. My phone">' +
+    '<label class="f">ntfy topic (subscribe to this in the ntfy app)</label><div class="mrow"><input class="inp" id="t_topic" value="' + esc(tg.topic) + '"><button type="button" class="btn small" id="t_copy">Copy</button></div>' +
+    '<div class="hint">Anyone who knows a topic name can read it, so keep this long random one rather than something guessable.</div>' +
+    '<label class="f">Server (leave blank for ntfy.sh)</label><input class="inp" id="t_server" value="' + esc(tg.server || '') + '" placeholder="https://ntfy.sh">' +
+    '<label style="display:flex;gap:8px;margin-top:12px;align-items:flex-start"><input type="checkbox" id="t_disc"' + (tg.discreet ? ' checked' : '') + '> <span>Discreet — notification just says "Something is due" with no names or medicines</span></label>' +
+    '<label class="f">Tapping the notification opens</label><input class="inp" id="t_click" value="' + esc(tg.click_url || '') + '">' +
+    '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="t_del">Delete</button>') + '<button class="btn" id="t_test">Save &amp; send test</button><span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="t_save">Save</button></div>');
+  const save = () => {
+    if (!val('t_label') || !val('t_topic')) { alert('Name and topic are needed'); return null; }
+    return put('care_targets', Object.assign({}, tg, { label: val('t_label'), topic: val('t_topic'), server: val('t_server'), discreet: $('t_disc').checked, click_url: val('t_click') }));
+  };
+  $('t_copy').onclick = () => { try { navigator.clipboard.writeText(val('t_topic')); toast('Topic copied'); } catch(e){ $('t_topic').select(); } };
+  $('t_save').onclick = () => { if (save()) { closeSheet(); render(); } };
+  $('t_test').onclick = async () => {
+    const r = save(); if (!r) return; $('t_test').disabled = true; $('t_test').textContent = 'Sending…';
+    try { await sync(); if (OUTBOX['care_targets:' + r.id]) throw new Error('Could not upload yet — are you online?');
+      await api('rpc/care_test_target', { method: 'POST', body: { p_id: r.id } }); closeSheet(); render(); toast('Test sent — should arrive within a few seconds'); }
+    catch(e){ $('t_test').disabled = false; $('t_test').textContent = 'Save & send test'; alert('Test failed: ' + e.message); }
+  };
+  if (!isNew) $('t_del').onclick = () => { if (confirm('Delete this phone? Reminders to it will stop.')) { remove('care_targets', tg); closeSheet(); render(); } };
+}
+
+/* -- interventions -- */
+function trialSheet(t){
+  const isNew = !t;
+  const ps = people();
+  t = t || { id: uuid(), person_id: (DB.care_people[FILTER] && FILTER) || (ps[0] && ps[0].id), title: '', aim: '', measures: [
+      { id: uuid().slice(0, 8), name: 'Night', type: 'scale', max: 5 }, { id: uuid().slice(0, 8), name: 'Diarrhoea', type: 'yesno' } ],
+    status: 'active', conclusion: '', started_on: ymd(new Date()), ended_on: null, checkin_time: '', notify: [], deleted: false };
+  const ms = JSON.parse(JSON.stringify(t.measures || []));
+  const drawM = () => {
+    $('m_list').innerHTML = ms.map((m, i) => m.hidden ? '' : '<div class="mrow"><input class="inp mn" data-i="' + i + '" value="' + esc(m.name) + '" placeholder="e.g. Stools" style="flex:2">' +
+      '<select class="inp mt" data-i="' + i + '" style="flex:1.4">' + [['yesno','Yes/No'],['scale','Scale'],['number','Number'],['text','Text']].map(o => '<option value="' + o[0] + '"' + (m.type === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select>' +
+      (m.type === 'scale' ? '<input type="number" class="inp mx" data-i="' + i + '" value="' + esc(m.max || 5) + '" title="max" style="width:58px">' : m.type === 'number' ? '<input class="inp mu" data-i="' + i + '" value="' + esc(m.unit || '') + '" placeholder="unit" style="width:70px">' : '') +
+      '<button type="button" class="btn small" data-rm="' + i + '">✕</button></div>').join('');
+    document.querySelectorAll('#m_list .mn').forEach(x => { x.oninput = () => { ms[+x.dataset.i].name = x.value; }; });
+    document.querySelectorAll('#m_list .mt').forEach(x => { x.onchange = () => { ms[+x.dataset.i].type = x.value; drawM(); }; });
+    document.querySelectorAll('#m_list .mx').forEach(x => { x.oninput = () => { ms[+x.dataset.i].max = Number(x.value) || 5; }; });
+    document.querySelectorAll('#m_list .mu').forEach(x => { x.oninput = () => { ms[+x.dataset.i].unit = x.value; }; });
+    document.querySelectorAll('#m_list [data-rm]').forEach(x => { x.onclick = () => { ms[+x.dataset.rm].hidden = true; drawM(); }; });
+  };
+  openSheet('<h3>' + (isNew ? 'New intervention' : 'Edit intervention') + '</h3>' +
+    '<label class="f">Who</label><select class="inp" id="tr_person">' + people(true).map(p => '<option value="' + p.id + '"' + (p.id === t.person_id ? ' selected' : '') + '>' + esc(p.name) + '</option>').join('') + '</select>' +
+    '<label class="f">What are you trying?</label><input class="inp" id="tr_title" value="' + esc(t.title) + '" placeholder="e.g. Introducing cow\'s milk">' +
+    '<label class="f">Aim / plan</label><textarea class="inp" id="tr_aim" placeholder="e.g. Milk ladder from dietician; stop if 2 bad nights in a row">' + esc(t.aim || '') + '</textarea>' +
+    '<label class="f">What to record each day</label><div id="m_list"></div><button type="button" class="link" id="m_add">+ Add a measure</button>' +
+    '<div class="hint">Scale = e.g. night 0 (terrible) to 5 (great). Removing a measure hides it but keeps what\'s already recorded.</div>' +
+    '<div class="mrow"><div class="grow"><label class="f">Started</label><input type="date" class="inp" id="tr_start" value="' + esc(t.started_on || '') + '"></div><div class="grow"><label class="f">Ended</label><input type="date" class="inp" id="tr_end" value="' + esc(t.ended_on || '') + '"></div></div>' +
+    '<label class="f">Status</label>' + segHtml('trstatus', [['active','Active'],['done','Finished'],['stopped','Stopped early']], t.status) +
+    '<label class="f">Daily reminder to record (optional)</label><input type="time" class="inp" id="tr_check" value="' + esc(t.checkin_time || '') + '">' +
+    '<div style="margin-top:6px">' + notifyPicker(t.notify) + '</div>' +
+    '<label class="f">Conclusion</label><textarea class="inp" id="tr_concl" placeholder="What did you learn?">' + esc(t.conclusion || '') + '</textarea>' +
+    '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="tr_del">Delete</button>') + '<span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="tr_save">Save</button></div>');
+  drawM();
+  $('m_add').onclick = () => { ms.push({ id: uuid().slice(0, 8), name: '', type: 'yesno' }); drawM(); };
+  $('tr_save').onclick = () => {
+    if (!val('tr_title')) { alert('Please give it a name'); return; }
+    const measures = ms.filter(m => m.hidden || String(m.name).trim()).map(m => Object.assign({}, m, { name: String(m.name).trim() }));
+    const status = segVal('trstatus') || 'active';
+    const nt = put('care_trials', Object.assign({}, t, { person_id: $('tr_person').value, title: val('tr_title'), aim: val('tr_aim'), measures, status,
+      started_on: val('tr_start') || null, ended_on: val('tr_end') || (status !== 'active' && t.status === 'active' ? ymd(new Date()) : null) || null,
+      checkin_time: val('tr_check') || null, notify: notifyVal(), conclusion: val('tr_concl') }));
+    TRIAL_OPEN = nt.id; TAB = 'trials'; closeSheet(); render();
+  };
+  if (!isNew) $('tr_del').onclick = () => { if (confirm('Delete this intervention and hide its records?')) { remove('care_trials', t); TRIAL_OPEN = null; closeSheet(); render(); } };
+}
+function obsSheet(t, o){
+  const isNew = !o;
+  o = o || { id: uuid(), trial_id: t.id, person_id: t.person_id, at: nowIso(), day: ymd(new Date()), kind: 'obs', label: null, vals: {}, note: '', deleted: false };
+  const vals = Object.assign({}, o.vals || {});
+  const ms = (t.measures || []).filter(m => !m.hidden || vals[m.id] !== undefined);
+  const inputs = ms.map(m => {
+    const v = vals[m.id];
+    let inp;
+    if (m.type === 'yesno') inp = segHtml('m_' + m.id, [['true','Yes'],['false','No'],['','–']], v === undefined ? '' : String(v));
+    else if (m.type === 'scale') { const opts = []; for (let i = 0; i <= Number(m.max || 5); i++) opts.push([String(i), String(i)]); opts.push(['', '–']); inp = segHtml('m_' + m.id, opts, v === undefined ? '' : String(v)); }
+    else if (m.type === 'number') inp = '<div class="mrow"><input type="number" step="any" class="inp" id="mv_' + m.id + '" value="' + esc(v == null ? '' : v) + '">' + (m.unit ? '<span class="muted">' + esc(m.unit) + '</span>' : '') + '</div>';
+    else inp = '<input class="inp" id="mv_' + m.id + '" value="' + esc(v || '') + '">';
+    return '<label class="f">' + esc(m.name) + (m.type === 'scale' ? ' <span class="muted">(0–' + (m.max || 5) + ')</span>' : '') + '</label>' + inp;
+  }).join('');
+  openSheet('<h3>🧪 ' + esc(t.title) + '</h3>' +
+    '<label class="f">Which day or night is this about?</label><input type="date" class="inp" id="o_day" value="' + esc(o.day || ymd(T(o.at))) + '">' +
+    (ms.length ? inputs : '<div class="hint">No measures yet — edit the intervention to add some.</div>') +
+    '<label class="f">Note</label><textarea class="inp" id="o_note">' + esc(o.note || '') + '</textarea>' +
+    '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="o_del">Delete</button>') + '<span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="o_save">Save</button></div>');
+  $('o_save').onclick = () => {
+    const nv = {};
+    ms.forEach(m => {
+      if (m.type === 'yesno') { const s = segVal('m_' + m.id); if (s === 'true') nv[m.id] = true; else if (s === 'false') nv[m.id] = false; }
+      else if (m.type === 'scale') { const s = segVal('m_' + m.id); if (s !== null && s !== '') nv[m.id] = Number(s); }
+      else if (m.type === 'number') { const s = val('mv_' + m.id); if (s !== '') nv[m.id] = Number(s); }
+      else { const s = val('mv_' + m.id); if (s) nv[m.id] = s; }
+    });
+    if (!Object.keys(nv).length && !val('o_note')) { alert('Nothing filled in'); return; }
+    put('care_obs', Object.assign({}, o, { day: val('o_day') || ymd(new Date()), vals: nv, note: val('o_note') }));
+    closeSheet(); render(); if (isNew) toast('Recorded');
+  };
+  if (!isNew) $('o_del').onclick = () => { if (confirm('Delete this record?')) { remove('care_obs', o); closeSheet(); render(); } };
+}
+function stepSheet(t, o, kind){
+  const isNew = !o; kind = (o && o.kind) || kind || 'step';
+  o = o || { id: uuid(), trial_id: t.id, person_id: t.person_id, at: nowIso(), day: ymd(new Date()), kind, label: '', vals: {}, note: '', deleted: false };
+  const prev = currentStep(t);
+  openSheet('<h3>' + (kind === 'step' ? 'New step' : 'Note') + ' · ' + esc(t.title) + '</h3>' +
+    (kind === 'step' ? '<label class="f">What changes from this day</label><input class="inp" id="s_label" value="' + esc(o.label || '') + '" placeholder="e.g. Step 2: 20 ml milk in porridge">' + (prev && isNew ? '<div class="hint">Current step: ' + esc(prev.label) + '</div>' : '') : '') +
+    '<label class="f">Day</label><input type="date" class="inp" id="s_day" value="' + esc(o.day) + '">' +
+    '<label class="f">Note</label><textarea class="inp" id="s_note">' + esc(o.note || '') + '</textarea>' +
+    '<div class="actions">' + (isNew ? '' : '<button class="btn danger" id="s_del">Delete</button>') + '<span class="sp"></span><button class="btn" data-act="close">Cancel</button><button class="btn primary" id="s_save">Save</button></div>');
+  $('s_save').onclick = () => {
+    if (kind === 'step' && !val('s_label')) { alert('What is the new step?'); return; }
+    if (kind === 'note' && !val('s_note')) { alert('Write a note'); return; }
+    put('care_obs', Object.assign({}, o, { label: kind === 'step' ? val('s_label') : null, day: val('s_day') || ymd(new Date()), note: val('s_note') }));
+    closeSheet(); render();
+  };
+  if (!isNew) $('s_del').onclick = () => { if (confirm('Delete?')) { remove('care_obs', o); closeSheet(); render(); } };
+}
+
+/* ---------- sign in ---------- */
+function loginHtml(){
+  return '<div class="login"><h2>Family Care</h2><p class="muted">Sign in with the same account you use for your other apps.</p>' +
+    '<label class="f">Email</label><input class="inp" id="li_email" type="email" autocomplete="username" value="' + esc(AUTH && AUTH.email || '') + '">' +
+    '<label class="f">Password</label><input class="inp" id="li_pw" type="password" autocomplete="current-password">' +
+    '<div class="actions"><button class="btn primary" id="li_go" style="flex:1">Sign in</button></div><p class="hint" id="li_msg"></p></div>';
+}
+function bindLogin(after){
+  $('li_go').onclick = async () => {
+    $('li_msg').textContent = 'Signing in…';
+    try { await authCall('password', { email: val('li_email'), password: $('li_pw').value }); if (after) after(); render(); sync(); }
+    catch(e){ $('li_msg').textContent = e.name === 'AbortError' || e instanceof TypeError ? 'No connection — you need signal to sign in.' : e.message; }
+  };
+}
+function signOut(){
+  const n = pendingCount();
+  if (!confirm(n ? n + ' change(s) have not uploaded yet and will be lost from this phone. Sign out anyway?' : 'Sign out and remove the data stored on this phone? (It stays safe in Supabase.)')) return;
+  ['care_db_v1','care_outbox_v1','care_pull_v1','care_auth_v1','care_members_v1','care_lastsync_v1'].forEach(k => LS.del(k));
+  location.reload();
+}
+
+/* ---------- events ---------- */
+function onClick(e){
+  const tab = e.target.closest('[data-tab]');
+  if (tab) { TAB = tab.dataset.tab; LS.set('care_tab_v1', TAB); if (TAB !== 'trials') TRIAL_OPEN = null; closeSheet(); render(); window.scrollTo(0, 0); return; }
+  const f = e.target.closest('[data-filter]');
+  if (f) { FILTER = f.dataset.filter; LS.set('care_filter_v1', FILTER); render(); return; }
+  const segb = e.target.closest('[data-seg] button');
+  if (segb) { [...segb.parentNode.children].forEach(x => x.classList.toggle('on', x === segb)); return; }
+  const a = e.target.closest('[data-act]'); if (!a) return;
+  const id = a.dataset.id, act = a.dataset.act;
+  if (act === 'close') return closeSheet();
+  if (act === 'give') return quickGive(DB.care_items[id]);
+  if (act === 'logmore') return logSheet(DB.care_items[id]);
+  if (act === 'slot') { const it = DB.care_items[id]; if (a.dataset.log) return logSheet(it, DB.care_logs[a.dataset.log]); return logSheet(it, null, atLocal(ymd(new Date()), a.dataset.t).getTime()); }
+  if (act === 'editlog') { const l = DB.care_logs[id]; return logSheet(DB.care_items[l.item_id] || { id: l.item_id, person_id: l.person_id, name: '(deleted item)' }, l); }
+  if (act === 'editobs') { const o = DB.care_obs[id], t = DB.care_trials[o.trial_id] || { id: o.trial_id, title: '(deleted)', measures: [] }; return o.kind === 'obs' ? obsSheet(t, o) : stepSheet(t, o); }
+  if (act === 'more') { HIST_DAYS += 30; return render(); }
+  if (act === 'opentrial') { TRIAL_OPEN = id; TAB = 'trials'; LS.set('care_tab_v1', TAB); render(); window.scrollTo(0, 0); return; }
+  if (act === 'closetrial') { TRIAL_OPEN = null; return render(); }
+  if (act === 'newtrial') { if (!people().length) { alert('Add a person in Setup first'); return; } return trialSheet(); }
+  if (act === 'edittrial') return trialSheet(DB.care_trials[id]);
+  if (act === 'record') return obsSheet(DB.care_trials[id]);
+  if (act === 'newstep') return stepSheet(DB.care_trials[id], null, 'step');
+  if (act === 'trialnote') return stepSheet(DB.care_trials[id], null, 'note');
+  if (act === 'csv') return trialCsv(DB.care_trials[id]);
+  if (act === 'newperson') return personSheet();
+  if (act === 'editperson') return personSheet(DB.care_people[id]);
+  if (act === 'newitem') return itemSheet(null, a.dataset.person);
+  if (act === 'edititem') return itemSheet(DB.care_items[id]);
+  if (act === 'newtarget') return targetSheet();
+  if (act === 'edittarget') return targetSheet(DB.care_targets[id]);
+  if (act === 'syncnow') return sync();
+  if (act === 'signout') return signOut();
+  if (act === 'backup') return download('family-care-backup-' + ymd(new Date()) + '.json', JSON.stringify({ exported_at: nowIso(), build: BUILD, data: DB }, null, 1), 'application/json');
+  if (act === 'relogin') { openSheet(loginHtml() + '<div class="actions"><button class="btn" data-act="close">Cancel</button></div>'); bindLogin(() => closeSheet()); return; }
+}
+
+function boot(){
+  document.addEventListener('click', onClick);
+  $('badge').onclick = () => {
+    if (SYNC.state === 'error' && SYNC.msg) alert(SYNC.msg);
+    else if (SYNC.state === 'signedout') { TAB = 'setup'; render(); }
+    sync();
+  };
+  // keep content clear of the fixed header and tab bar
+  const fit = () => { $('main').style.paddingTop = ($('top').offsetHeight + 12) + 'px'; $('main').style.paddingBottom = ($('tabs').offsetHeight + 24) + 'px'; };
+  if (window.ResizeObserver) { new ResizeObserver(fit).observe($('top')); new ResizeObserver(fit).observe($('tabs')); }
+  fit();
+  render(); sync();
+  window.addEventListener('online', () => sync());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { sync(); if (!sheetOpen()) render(); } });
+  setInterval(() => { if (document.hidden) return; drawStatus(); if (!sheetOpen()) render(); }, 60000);
+  setInterval(() => { if (!document.hidden) sync(); }, 90000);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(e => showErr('Offline mode could not start: ' + e.message));
+}
+if (typeof document !== 'undefined' && document.getElementById('main')) boot();
+</script>
+</body>
+</html>
